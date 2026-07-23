@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>차량 통신(CAN) 실습 — 팀 과제 안내</title>
+<style>
+  :root {
+    --bg: #0f1417;
+    --surface: #171e23;
+    --surface-2: #1e272d;
+    --line: #2a353c;
+    --ink: #e8eef1;
+    --ink-dim: #9aa9b2;
+    --ink-faint: #6b7a83;
+    --amber: #f2a93b;
+    --green: #4bd07f;
+    --cyan: #58c4dd;
+    --red: #e5564e;
+    --mono: "SF Mono", "JetBrains Mono", "Consolas", "Menlo", monospace;
+    --sans: "Pretendard", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 20px;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 56px 0 100px; }
+
+  header { margin-bottom: 56px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(30px, 5.5vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  h1 .sub { display: block; color: var(--ink-dim); font-size: clamp(16px, 2.6vw, 20px); font-weight: 500; margin-top: 10px; letter-spacing: 0; }
+
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 32px;
+  }
+  .meta div { background: var(--surface); padding: 16px 18px; }
+  .meta dt { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+  .meta dd { font-size: 15px; font-weight: 600; }
+  .meta dd.hot { color: var(--amber); }
+
+  section { margin-top: 56px; }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sec-num { font-family: var(--mono); font-size: 13px; color: var(--amber); font-weight: 600; }
+  .sec-head h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+
+  p.lead { color: var(--ink-dim); font-size: 15.5px; margin-bottom: 8px; }
+
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--amber);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 22px 0;
+    font-size: 14.5px;
+    color: var(--ink-dim);
+  }
+  .callout strong { color: var(--ink); font-weight: 600; }
+
+  .teams { display: flex; flex-direction: column; gap: 20px; }
+  .team {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 26px 28px;
+    position: relative;
+  }
+
+  /* 이름 입력란 */
+  .roster {
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .roster-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+  .roster input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 10px 14px;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .roster input:focus {
+    outline: none;
+    border-color: var(--amber);
+  }
+  .roster input::placeholder { color: var(--ink-faint); font-weight: 400; }
+
+  .team-top {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .team-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--ink-dim);
+    border: 1px solid var(--line);
+  }
+  .team-name { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .team-size {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    padding: 3px 8px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-left: auto;
+  }
+  .tag.build { background: rgba(75, 208, 127, 0.12); color: var(--green); border: 1px solid rgba(75, 208, 127, 0.3); }
+  .tag.research { background: rgba(88, 196, 221, 0.12); color: var(--cyan); border: 1px solid rgba(88, 196, 221, 0.3); }
+
+  .team-desc { color: var(--ink-faint); font-size: 13.5px; font-family: var(--mono); margin-bottom: 18px; }
+
+  ol.reqs { list-style: none; counter-reset: r; }
+  ol.reqs > li {
+    counter-increment: r;
+    padding: 9px 0 9px 34px;
+    position: relative;
+    font-size: 14.5px;
+    border-top: 1px solid var(--line);
+  }
+  ol.reqs > li:first-child { border-top: none; }
+  ol.reqs > li::before {
+    content: counter(r);
+    position: absolute;
+    left: 0; top: 9px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+    font-weight: 600;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface-2);
+  }
+  ol.reqs li strong { color: var(--ink); font-weight: 700; }
+  ol.reqs li .hl { color: var(--green); }
+  li.key strong { color: var(--green); }
+
+  .hint {
+    margin: 16px 0 4px 34px;
+    background: var(--surface-2);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .hint-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+  .hint ul { list-style: none; }
+  .hint li { font-size: 13.5px; color: var(--ink-dim); padding: 3px 0 3px 16px; position: relative; }
+  .hint li::before { content: "→"; position: absolute; left: 0; color: var(--ink-faint); }
+  .hint .free { margin-top: 8px; font-size: 12.5px; color: var(--ink-faint); font-style: italic; }
+
+  .notes { display: flex; flex-direction: column; gap: 14px; }
+  .note {
+    display: flex;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    align-items: flex-start;
+  }
+  .note .icon {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--amber);
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    border-radius: 6px;
+    padding: 6px 8px;
+    flex-shrink: 0;
+    letter-spacing: 0.05em;
+  }
+  .note .body { font-size: 14.5px; }
+  .note .body b { color: var(--ink); }
+  code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--cyan);
+  }
+
+  /* 폰트 안내용 샘플 */
+  .fontrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .fontchip {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .fontchip .role { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 3px; }
+  .fontchip .val { color: var(--ink); font-weight: 600; }
+
+  /* 다운로드 버튼 */
+  .dl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    border-radius: 8px;
+    padding: 11px 18px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .dl-btn:hover { background: var(--amber); color: var(--bg); }
+  .dl-note { font-size: 12.5px; color: var(--ink-faint); margin-top: 8px; font-family: var(--mono); }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  a { color: var(--cyan); }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 40px 0 70px; }
+    .team { padding: 22px 18px; }
+    .hint, .team-desc { margin-left: 0; }
+    ol.reqs > li { padding-left: 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">In-Vehicle Network · Team Assignment</div>
+    <h1>
+      차량 통신 실습 팀 과제
+      <span class="sub">CAN FD · DoIP · UDS · ISO-TP — 팀별 1개 주제 심화</span>
+    </h1>
+
+    <dl class="meta">
+      <div><dt>총 인원</dt><dd>18명 · 4팀</dd></div>
+      <div><dt>제출 기한</dt><dd class="hot">~ 8월 9일</dd></div>
+      <div><dt>제출물</dt><dd>PPT + can_lab</dd></div>
+      <div><dt>주제 배정</dt><dd>선택 후 잔여 배정</dd></div>
+    </dl>
+  </header>
+
+  <!-- 개요 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">00</span><h2>진행 방식</h2></div>
+    <p class="lead">아래 4개 주제 중 팀별로 하나를 맡아 심화 자료를 제작합니다. 원하는 주제를 먼저 선택하고, 남는 인원은 잔여 주제에 배정됩니다.</p>
+    <div class="callout">
+      주제마다 성격이 다릅니다. <strong>UDS · ISO-TP</strong>는 실습 분석과 <strong>코드 설계</strong>가 포함되어, 조사 중심인 <strong>CAN FD · DoIP</strong>보다 작업량이 다소 많습니다. 인원도 이를 반영해 <strong>6명</strong>씩 배정합니다.
+    </div>
+    <div class="callout" style="border-left-color: var(--green);">
+      <strong>분량은 따로 정하지 않습니다.</strong> 다만 제대로 만들면 최소 15장 이상은 나올 것입니다. 인당 3장 정도인 셈이니 크게 부담되진 않겠죠?
+    </div>
+  </section>
+
+  <!-- 주제별 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>주제별 요구사항</h2></div>
+    <div class="teams">
+
+      <!-- CAN FD -->
+      <div class="team">
+        <div class="roster">
+          <div class="roster-label">팀원 (수업 중 입력)</div>
+          <input type="text" placeholder="이름을 입력하세요 (예: 홍길동, 김철수, 이영희)">
+        </div>
+        <div class="team-top">
+          <span class="team-id">TEAM 1</span>
+          <span class="team-name">CAN FD</span>
+          <span class="team-size">3명</span>
+          <span class="tag research">Research</span>
+        </div>
+        <div class="team-desc">// 프레임 구조 및 차이점</div>
+        <ol class="reqs">
+          <li>CAN FD <strong>등장 배경</strong> — Classical CAN의 한계(8바이트, 속도)</li>
+          <li>CAN FD <strong>프레임 구조</strong> — BRS, ESI, FDF 등 새로 생긴 필드</li>
+          <li><strong>Classical CAN vs CAN FD 차이점</strong> — 데이터 길이(8→64B), 비트레이트 전환, CRC 등</li>
+          <li><strong>실제 활용 사례</strong> — CAN FD를 도입한 시스템/차량 예시와 그 이유</li>
+        </ol>
+      </div>
+
+      <!-- DoIP -->
+      <div class="team">
+        <div class="roster">
+          <div class="roster-label">팀원 (수업 중 입력)</div>
+          <input type="text" placeholder="이름을 입력하세요 (예: 홍길동, 김철수, 이영희)">
+        </div>
+        <div class="team-top">
+          <span class="team-id">TEAM 2</span>
+          <span class="team-name">DoIP</span>
+          <span class="team-size">3명</span>
+          <span class="tag research">Research</span>
+        </div>
+        <div class="team-desc">// 프레임 구조 및 차이점</div>
+        <ol class="reqs">
+          <li>DoIP란 무엇인가 — <strong>Diagnostics over IP</strong>, 자동차 이더넷 기반 진단</li>
+          <li>DoIP <strong>등장 배경</strong> — 대용량·고속 진단 니즈</li>
+          <li>DoIP <strong>헤더 / 메시지 구조</strong></li>
+          <li><strong>CAN 기반 진단 vs DoIP 차이점</strong> — 물리 계층, TCP/UDP 사용, 네트워크 계층 유무</li>
+          <li><strong>실제 활용 사례</strong> — DoIP가 쓰이는 차량/상황 예시</li>
+        </ol>
+      </div>
+
+      <!-- UDS -->
+      <div class="team">
+        <div class="roster">
+          <div class="roster-label">팀원 (수업 중 입력)</div>
+          <input type="text" placeholder="이름을 입력하세요 (6명)">
+        </div>
+        <div class="team-top">
+          <span class="team-id">TEAM 3</span>
+          <span class="team-name">UDS</span>
+          <span class="team-size">6명</span>
+          <span class="tag build">Analyze + Build</span>
+        </div>
+        <div class="team-desc">// 진단 메시지 흐름 분석 + 실습 설계</div>
+        <ol class="reqs">
+          <li>UDS 개념, <strong>요청/응답 구조</strong> — SID, DID, +0x40, NRC</li>
+          <li><strong>주요 서비스 조사</strong> — 0x10, 0x22 등</li>
+          <li><strong>수업 실습 캡처 분석</strong> — candump 로그로 요청→응답 흐름, 바이트 해석</li>
+          <li class="key"><strong>실제 차량 시나리오 설계 + 코드 구현</strong> — 실제 차량에서 쓰일 법한 진단 시나리오를 설계하고, 제공된 <code>uds_ecu</code> / <code>uds_client</code> 코드를 수정해 동작시킬 것. <span class="hl">수정한 부분이 무엇을 의도한 것인지 설명</span> + 오가는 프레임 분석</li>
+        </ol>
+        <div class="hint">
+          <div class="hint-label">시나리오 예시</div>
+          <ul>
+            <li>엔진 ECU에서 고장 코드(DTC) 읽기</li>
+            <li>주행거리 · 배터리 · 엔진온도 여러 데이터 순차 조회</li>
+            <li>보안 접근이 필요한 데이터 읽기 (인증 시퀀스)</li>
+          </ul>
+          <div class="free">위 예시를 참고하되, 자유롭게 설계해도 좋습니다.</div>
+        </div>
+      </div>
+
+      <!-- ISO-TP -->
+      <div class="team">
+        <div class="roster">
+          <div class="roster-label">팀원 (수업 중 입력)</div>
+          <input type="text" placeholder="이름을 입력하세요 (6명)">
+        </div>
+        <div class="team-top">
+          <span class="team-id">TEAM 4</span>
+          <span class="team-name">ISO-TP</span>
+          <span class="team-size">6명</span>
+          <span class="tag build">Analyze + Build</span>
+        </div>
+        <div class="team-desc">// 진단 메시지 흐름 분석 + 실습 설계</div>
+        <ol class="reqs">
+          <li>ISO-TP 개념, <strong>왜 필요한가</strong> — 8바이트 한계</li>
+          <li><strong>프레임 타입 상세</strong> — SF / FF / CF / FC, 첫 니블로 구분</li>
+          <li><strong>수업 실습 캡처 분석</strong> — candump 로그로 분할/재조립 과정, 첫 바이트 해석</li>
+          <li class="key"><strong>실제 차량 시나리오 설계 + 코드 구현</strong> — 긴 데이터 전송 시나리오를 설계하고 코드를 수정해 동작시킬 것. <span class="hl">수정한 부분이 무엇을 의도한 것인지 설명</span> + 프레임 분석</li>
+        </ol>
+        <div class="hint">
+          <div class="hint-label">시나리오 예시</div>
+          <ul>
+            <li>긴 VIN / 펌웨어 버전 정보 분할 전송</li>
+            <li>여러 센서값을 묶어 긴 응답으로 전송</li>
+            <li>데이터 길이에 따른 분할 개수 실험</li>
+          </ul>
+          <div class="free">위 예시를 참고하되, 자유롭게 설계해도 좋습니다.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 양식 / 폰트 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>양식 & 글꼴</h2></div>
+    <div class="note" style="margin-bottom:14px;">
+      <span class="icon">PPT</span>
+      <div class="body">
+        <b>연구실 PPT 템플릿</b>을 사용해 제작하세요. 아래에서 내려받을 수 있습니다.
+        <br>
+        <a class="dl-btn" href="연구실_PPT_템플릿.pptx" download>↓ 연구실 PPT 템플릿 다운로드</a>
+        <div class="dl-note">※ 링크가 열리지 않으면 강사에게 파일을 요청하세요.</div>
+      </div>
+    </div>
+    <div class="note">
+      <span class="icon">FONT</span>
+      <div class="body">
+        <b>글꼴을 통일해 주세요.</b> 나눔글꼴은 네이버에서 무료로 내려받을 수 있습니다.
+        <div class="fontrow">
+          <div class="fontchip"><span class="role">본문</span><span class="val">나눔스퀘어</span></div>
+          <div class="fontchip"><span class="role">제목</span><span class="val">나눔스퀘어 ExtraBold</span></div>
+          <div class="fontchip"><span class="role">강조</span><span class="val">나눔스퀘어 ExtraBold</span></div>
+        </div>
+        <div class="dl-note">다운로드: 네이버 나눔글꼴 (무료) — “네이버 나눔글꼴” 검색</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 공통 안내 -->
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>공통 안내</h2></div>
+    <div class="notes">
+      <div class="note">
+        <span class="icon">ROLE</span>
+        <div class="body"><b>담당 표시</b> — 자료 안에 <b>본인이 어느 부분을 맡았는지</b> 명시하세요.</div>
+      </div>
+      <div class="note">
+        <span class="icon">ZIP</span>
+        <div class="body"><b>제출물</b> — <b>PPT</b>와 <b>수정한 <code>can_lab</code> 폴더</b>를 함께 압축하여 제출하세요. (UDS · ISO-TP 팀은 코드 필수)</div>
+      </div>
+      <div class="note">
+        <span class="icon">LLM</span>
+        <div class="body"><b>LLM 활용</b> — Claude 등 LLM을 적극 활용해도 좋습니다. 단, <b>수정한 부분의 의도는 스스로 설명</b>할 수 있어야 합니다. 결과물 자체보다 “무엇을 왜 했는가”가 중요합니다.</div>
+      </div>
+      <div class="note">
+        <span class="icon">COPY</span>
+        <div class="body"><b>인용</b> — 출처 명시는 필수가 아닙니다. 다만 <b>인터넷 내용을 그대로 가져오는 것은 지양</b>하고, 그대로 사용했다면 출처를 남겨 주세요.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>ACE Lab · 차량 통신 실습</span>
+    <span>제출 기한: ~ 8월 9일</span>
+  </footer>
+
+</div>
+</body>
+</html>
